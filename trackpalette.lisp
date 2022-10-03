@@ -10,29 +10,31 @@
               (has "w::fldChar")
               (remove))))
 
-(defun fix-character-style (run style-name &optional remove-color)
+(defun fix-character-style (run style-name &key remove-color remove-highlighting)
   (let* ((run-props (ensure-child/tag run "w:rPr" t))
          (run-style (ensure-child/tag run-props "w:rStyle")))
     (setf (plump:attribute run-style "w:val") style-name)
     (when remove-color
-      (remove-child/tag run-props "w:color")))
+      (remove-child/tag run-props "w:color"))
+    (when remove-highlighting
+      (remove-child/tag run-props "w:highlight")))
   run)
 
-(lquery:define-lquery-function fix-character-style (run style-name &optional remove-color)
-  (fix-character-style run style-name remove-color))
+(lquery:define-lquery-function fix-character-style (run style-name &key remove-color remove-highlighting)
+  (fix-character-style run style-name :remove-color remove-color :remove-highlighting remove-highlighting))
 
-(defun handle-insertions (root)
+(defun handle-insertions (root &key remove-color remove-highlighting)
   (lquery:with-master-document (root)
     (lquery:$ "w::p" "w::ins" "w::r"
-              (fix-character-style "IPCInsertion")
+              (fix-character-style "IPCInsertion" :remove-color remove-color :remove-highlighting remove-highlighting)
               (remove-attr "w:rsidR" "w:rsidRPr"))
     (lquery:$ "w::p" "w::ins"
               (splice))))
 
-(defun handle-move-tos (root)
+(defun handle-move-tos (root &key remove-color remove-highlighting)
   (lquery:with-master-document (root)
     (lquery:$ "w::moveTo" "w::r"
-              (fix-character-style "IPCMoveTo")
+              (fix-character-style "IPCMoveTo" :remove-color remove-color :remove-highlighting remove-highlighting)
               (remove-attr "w:rsidR" "w:rsidRPr"))
     (lquery:$ "w::moveTo"
               (splice))
@@ -40,10 +42,10 @@
               (add "w::moveToRangeEnd")
               (remove))))
 
-(defun handle-move-froms (root)
+(defun handle-move-froms (root &key remove-color remove-highlighting)
   (lquery:with-master-document (root)
     (lquery:$ "w::moveFrom" "w::r"
-              (fix-character-style "IPCMoveFrom")
+              (fix-character-style "IPCMoveFrom" :remove-color remove-color :remove-highlighting remove-highlighting)
               (remove-attr "w:rsidR" "w:rsidRPr" "w:rsidDel"))
     (lquery:$ "w::moveFrom"
               (splice))
@@ -60,10 +62,10 @@
 (lquery:define-lquery-function fix-del-text (run)
   (fix-del-text run))
 
-(defun handle-deletions (root)
+(defun handle-deletions (root &key remove-color remove-highlighting)
   (lquery:with-master-document (root)
     (lquery:$ "w::p" "w::del" "w::r"
-              (fix-character-style "IPCDeletion")
+              (fix-character-style "IPCDeletion" :remove-color remove-color :remove-highlighting remove-highlighting)
               (fix-del-text)
               (remove-attr "w:rsidR" "w:rsidRPr" "w:rsidDel"))
     (lquery:$ "w::p" "w::del"
@@ -71,16 +73,16 @@
 
 ;;; FIXME math control stuff ??
 
-(defun handle-deleted-math-characters (root)
+(defun handle-deleted-math-characters (root &key remove-color remove-highlighting)
   (lquery:with-master-document (root)
     (lquery:$ "m::r" "w::del"
-              (fix-character-style "IPCDeletion")
+              (fix-character-style "IPCDeletion" :remove-color remove-color :remove-highlighting remove-highlighting)
               (splice))))
 
-(defun handle-inserted-math-characters (root)
+(defun handle-inserted-math-characters (root &key remove-color remove-highlighting)
   (lquery:with-master-document (root)
     (lquery:$ "m::r" "w::ins"
-              (fix-character-style "IPCInsertion")
+              (fix-character-style "IPCInsertion" :remove-color remove-color :remove-highlighting remove-highlighting)
               (splice))))
 
 (defparameter *cell-insertion-fill* "B4C6E7")
